@@ -5,25 +5,35 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 func main() {
 	if len(os.Args) != 2 {
-		log.Fatal("Usage: unused <path-to-go-file>")
+		log.Fatal("Usage: unused \"<glob file pattern>\"")
 	}
 
-	filename := os.Args[1]
+	filenamePattern := os.Args[1]
 
-	symbols := getSymbols(filename)
-	for _, s := range symbols {
-		if isExported(s.Name) {
-			refs := getReferences(filename, s.Range.Start)
-			if len(refs) == 0 {
-				// Unused
-				fmt.Printf("%s:%s:%s:%s\n", filename, s.Range.Start, s.Type, s.Name)
+	filenames, err := filepath.Glob(filenamePattern)
+	must(err, "failed to glob")
+
+	for _, filename := range filenames {
+		if strings.HasSuffix(filename, "_test.go") {
+			continue
+		}
+		symbols := getSymbols(filename)
+		for _, s := range symbols {
+			if isExported(s.Name) {
+				refs := getReferences(filename, s.Range.Start)
+				if len(refs) == 0 {
+					// Unused
+					fmt.Printf("%s:%s:%s:%s\n", filename, s.Range.Start, s.Type, s.Name)
+				}
 			}
 		}
+
 	}
 }
 
@@ -79,13 +89,13 @@ func getReferences(filename, pos string) []string {
 func runGopls(feature string, args ...string) string {
 	args = append([]string{feature}, args...)
 	b, err := exec.Command("gopls", args...).CombinedOutput()
-	must(err, b)
+	must(err, string(b))
 	return string(b)
 }
 
-func must(err error, output []byte) {
+func must(err error, msg string) {
 	if err != nil {
-		fmt.Println(string(output))
+		fmt.Println(msg)
 		log.Fatal(err)
 	}
 }
