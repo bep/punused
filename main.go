@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -26,45 +27,62 @@ func init() {
 
 func main() {
 	if len(os.Args) != 2 {
-		log.Fatal("Usage: unused \"<glob file pattern>\"")
+		log.Fatal("Usage: unused <glob file pattern or packace selector>")
 	}
 
 	filenamePattern := os.Args[1]
+
+	if strings.HasSuffix(filenamePattern, "/...") {
+		root := filepath.FromSlash(strings.TrimSuffix(filenamePattern, "/..."))
+		fmt.Println("Scanning", root)
+		err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+			if info != nil && info.IsDir() {
+				return nil
+			}
+			handleFile(path)
+			return nil
+		})
+		must(err, "Error walking")
+		return
+	}
 
 	filenames, err := filepath.Glob(filenamePattern)
 	must(err, "failed to glob")
 
 	for _, filename := range filenames {
-		if strings.HasSuffix(filename, "_test.go") {
+		handleFile(filename)
+	}
+}
+
+func handleFile(filename string) {
+	if strings.HasSuffix(filename, "_test.go") {
+		return
+	}
+	symbols := getSymbols(filename)
+	for _, s := range symbols {
+		if !isExported(s.Name) {
 			continue
 		}
-		symbols := getSymbols(filename)
-		for _, s := range symbols {
-			if !isExported(s.Name) {
-				continue
+
+		refs := getReferences(filename, s.Range.Start)
+		if len(refs) == 0 {
+			// Unused
+			fmt.Printf("%sUnused: %s:%s:%s:%s%s\n", colorUnused, filename, s.Range.Start, s.Type, s.Name, colorReset)
+		} else {
+			var nonTestUsage bool
+			for _, ref := range refs {
+				if !ref.IsTest {
+					nonTestUsage = true
+					break
+				}
 			}
 
-			refs := getReferences(filename, s.Range.Start)
-			if len(refs) == 0 {
-				// Unused
-				fmt.Printf("%sUnused: %s:%s:%s:%s%s\n", colorUnused, filename, s.Range.Start, s.Type, s.Name, colorReset)
-			} else {
-				var nonTestUsage bool
+			if !nonTestUsage {
 				for _, ref := range refs {
-					if !ref.IsTest {
-						nonTestUsage = true
-						break
-					}
-				}
-
-				if !nonTestUsage {
-					for _, ref := range refs {
-						fmt.Printf("%sTest Usage Only: %s:%s%s\n", colorTestOnly, s.Name, ref.Ref, colorReset)
-					}
+					fmt.Printf("%sTest Usage Only: %s:%s%s\n", colorTestOnly, s.Name, ref.Ref, colorReset)
 				}
 			}
 		}
-
 	}
 }
 
