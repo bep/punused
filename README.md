@@ -1,2 +1,7 @@
-# unused
-Work in progress
+
+
+```bash
+go install golang.org/x/tools/gopls@latest
+```
+
+
