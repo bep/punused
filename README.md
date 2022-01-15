@@ -4,7 +4,6 @@ I have used this in Hugo (a monorepo with many packages), and it works. But isn'
 
 * It does not detect references from outside of your project. TODO(bep) figure out what the search path is.
 * It does not detect references via `reflect`.
-* It does not detect references from test files.
 
 So, you should inspect and test the proposed deletes.
 

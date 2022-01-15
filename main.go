@@ -6,8 +6,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
+
+var (
+	colorUnused   = "\033[32m"
+	colorTestOnly = "\033[34m"
+	colorReset    = "\033[0m"
+)
+
+func init() {
+	if runtime.GOOS == "windows" {
+		colorTestOnly = ""
+		colorUnused = ""
+		colorReset = ""
+	}
+}
 
 func main() {
 	if len(os.Args) != 2 {
@@ -29,7 +44,21 @@ func main() {
 				refs := getReferences(filename, s.Range.Start)
 				if len(refs) == 0 {
 					// Unused
-					fmt.Printf("%s:%s:%s:%s\n", filename, s.Range.Start, s.Type, s.Name)
+					fmt.Printf("%sUnused: %s:%s:%s:%s%s\n", colorUnused, filename, s.Range.Start, s.Type, s.Name, colorReset)
+				} else {
+					var nonTestUsage bool
+					for _, ref := range refs {
+						if !ref.IsTest {
+							nonTestUsage = true
+							break
+						}
+					}
+
+					if !nonTestUsage {
+						for _, ref := range refs {
+							fmt.Printf("%sTest Usage Only: %s:%s%s\n", colorTestOnly, s.Name, ref.Ref, colorReset)
+						}
+					}
 				}
 			}
 		}
@@ -63,24 +92,22 @@ func getSymbols(filename string) []Symbol {
 	return symbols
 }
 
-func getReferences(filename, pos string) []string {
+func getReferences(filename, pos string) []Reference {
 	referencesList := runGopls("references", filename+":"+pos)
 
 	lines := strings.Split(strings.TrimSpace(referencesList), "\n")
 
-	var references []string
+	var references []Reference
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 {
 			continue
 		}
 
-		// Skip test references.
-		if strings.Contains(line, "_test.go") {
-			continue
-		}
-
-		references = append(references, line)
+		references = append(references, Reference{
+			Ref:    line,
+			IsTest: strings.Contains(line, "_test.go"),
+		})
 
 	}
 	return references
@@ -109,6 +136,11 @@ type Symbol struct {
 type Range struct {
 	Start string
 	End   string
+}
+
+type Reference struct {
+	Ref    string
+	IsTest bool
 }
 
 func isExported(s string) bool {
