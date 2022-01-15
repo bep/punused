@@ -40,24 +40,26 @@ func main() {
 		}
 		symbols := getSymbols(filename)
 		for _, s := range symbols {
-			if isExported(s.Name) {
-				refs := getReferences(filename, s.Range.Start)
-				if len(refs) == 0 {
-					// Unused
-					fmt.Printf("%sUnused: %s:%s:%s:%s%s\n", colorUnused, filename, s.Range.Start, s.Type, s.Name, colorReset)
-				} else {
-					var nonTestUsage bool
-					for _, ref := range refs {
-						if !ref.IsTest {
-							nonTestUsage = true
-							break
-						}
-					}
+			if !isExported(s.Name) {
+				continue
+			}
 
-					if !nonTestUsage {
-						for _, ref := range refs {
-							fmt.Printf("%sTest Usage Only: %s:%s%s\n", colorTestOnly, s.Name, ref.Ref, colorReset)
-						}
+			refs := getReferences(filename, s.Range.Start)
+			if len(refs) == 0 {
+				// Unused
+				fmt.Printf("%sUnused: %s:%s:%s:%s%s\n", colorUnused, filename, s.Range.Start, s.Type, s.Name, colorReset)
+			} else {
+				var nonTestUsage bool
+				for _, ref := range refs {
+					if !ref.IsTest {
+						nonTestUsage = true
+						break
+					}
+				}
+
+				if !nonTestUsage {
+					for _, ref := range refs {
+						fmt.Printf("%sTest Usage Only: %s:%s%s\n", colorTestOnly, s.Name, ref.Ref, colorReset)
 					}
 				}
 			}
