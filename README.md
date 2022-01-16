@@ -4,8 +4,9 @@ I have used this in Hugo (a monorepo with many packages), and it works. But isn'
 
 * It does not detect references from outside of your project. TODO(bep) figure out what the search path is.
 * It does not detect references via `reflect`.
+* Some possible surprises when it comes to interfaces.
 
-So, you should inspect and test the proposed deletes.
+So, you should inspect and test the proposed deletes. See this [test repo](https://github.com/bep/unused-test) for more information.
 
 ## Install
 
