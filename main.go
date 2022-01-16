@@ -27,10 +27,11 @@ func init() {
 
 func main() {
 	if len(os.Args) != 2 {
-		log.Fatal("Usage: unused <glob file pattern or packace selector>")
+		log.Fatal("Usage: unused <glob file pattern or package selector>")
 	}
 
 	filenamePattern := os.Args[1]
+	r := &runner{}
 
 	if strings.HasSuffix(filenamePattern, "/...") {
 		root := filepath.FromSlash(strings.TrimSuffix(filenamePattern, "/..."))
@@ -39,10 +40,11 @@ func main() {
 			if info != nil && info.IsDir() {
 				return nil
 			}
-			handleFile(path)
+			r.handleFile(path)
 			return nil
 		})
 		must(err, "Error walking")
+		r.printResult()
 		return
 	}
 
@@ -50,24 +52,46 @@ func main() {
 	must(err, "failed to glob")
 
 	for _, filename := range filenames {
-		handleFile(filename)
+		r.handleFile(filename)
+	}
+
+	r.printResult()
+}
+
+type runner struct {
+	unused          []string
+	usedInTestsOnly []string
+}
+
+func (r *runner) printResult() {
+	fmt.Println()
+	fmt.Print(colorTestOnly + "Used only in tests:" + colorReset + "\n\n")
+
+	for _, e := range r.usedInTestsOnly {
+		fmt.Println(colorTestOnly + e + colorReset)
+	}
+
+	fmt.Println()
+	fmt.Print(colorUnused + "Unused:" + colorReset + "\n\n")
+
+	for _, e := range r.unused {
+		fmt.Println(colorUnused + e + colorReset)
 	}
 }
 
-func handleFile(filename string) {
+func (r *runner) handleFile(filename string) {
 	if strings.HasSuffix(filename, "_test.go") {
 		return
 	}
-	symbols := getSymbols(filename)
+	symbols := r.getSymbols(filename)
 	for _, s := range symbols {
 		if !isExported(s.Name) {
 			continue
 		}
 
-		refs := getReferences(filename, s.Range.Start)
+		refs := r.getReferences(filename, s.Range.Start)
 		if len(refs) == 0 {
-			// Unused
-			fmt.Printf("%sUnused: %s:%s:%s:%s%s\n", colorUnused, filename, s.Range.Start, s.Type, s.Name, colorReset)
+			r.unused = append(r.unused, fmt.Sprintf("%s:%s:%s:%s", filename, s.Range.Start, s.Type, s.Name))
 		} else {
 			var nonTestUsage bool
 			for _, ref := range refs {
@@ -78,16 +102,14 @@ func handleFile(filename string) {
 			}
 
 			if !nonTestUsage {
-				for _, ref := range refs {
-					fmt.Printf("%sTest Usage Only: %s:%s%s\n", colorTestOnly, s.Name, ref.Ref, colorReset)
-				}
+				r.usedInTestsOnly = append(r.usedInTestsOnly, fmt.Sprintf("%s:%s:%s:%s", filename, s.Range.Start, s.Type, s.Name))
 			}
 		}
 	}
 }
 
-func getSymbols(filename string) []Symbol {
-	symbolsList := runGopls("symbols", filename)
+func (r *runner) getSymbols(filename string) []Symbol {
+	symbolsList := r.runGopls("symbols", filename)
 	lines := strings.Split(symbolsList, "\n")
 
 	var symbols []Symbol
@@ -112,8 +134,8 @@ func getSymbols(filename string) []Symbol {
 	return symbols
 }
 
-func getReferences(filename, pos string) []Reference {
-	referencesList := runGopls("references", filename+":"+pos)
+func (r *runner) getReferences(filename, pos string) []Reference {
+	referencesList := r.runGopls("references", filename+":"+pos)
 
 	lines := strings.Split(strings.TrimSpace(referencesList), "\n")
 
@@ -133,7 +155,7 @@ func getReferences(filename, pos string) []Reference {
 	return references
 }
 
-func runGopls(feature string, args ...string) string {
+func (r *runner) runGopls(feature string, args ...string) string {
 	args = append([]string{feature}, args...)
 	b, err := exec.Command("gopls", args...).CombinedOutput()
 	must(err, string(b))
@@ -145,6 +167,11 @@ func must(err error, msg string) {
 		fmt.Println(msg)
 		log.Fatal(err)
 	}
+}
+
+type Usage struct {
+	Filename string
+	Symbol   Symbol
 }
 
 type Symbol struct {
