@@ -118,7 +118,13 @@ func (r *runner) getSymbols(filename string) []Symbol {
 			continue
 		}
 		parts := strings.Fields(line)
+		if len(parts) != 3 {
+			panic(fmt.Sprintf("Unexpected line: %s", line))
+		}
 		startEnd := strings.Split(parts[2], "-")
+		if len(startEnd) != 2 {
+			panic(fmt.Sprintf("Unexpected position: %s", startEnd))
+		}
 
 		symbols = append(symbols, Symbol{
 			Name: parts[0],
