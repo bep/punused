@@ -44,7 +44,6 @@ func main() {
 			return nil
 		})
 		must(err, "Error walking")
-		r.printResult()
 		return
 	}
 
@@ -54,30 +53,9 @@ func main() {
 	for _, filename := range filenames {
 		r.handleFile(filename)
 	}
-
-	r.printResult()
 }
 
-type runner struct {
-	unused          []string
-	usedInTestsOnly []string
-}
-
-func (r *runner) printResult() {
-	fmt.Println()
-	fmt.Print(colorTestOnly + "Used only in tests:" + colorReset + "\n\n")
-
-	for _, e := range r.usedInTestsOnly {
-		fmt.Println(colorTestOnly + e + colorReset)
-	}
-
-	fmt.Println()
-	fmt.Print(colorUnused + "Unused:" + colorReset + "\n\n")
-
-	for _, e := range r.unused {
-		fmt.Println(colorUnused + e + colorReset)
-	}
-}
+type runner struct{}
 
 func (r *runner) handleFile(filename string) {
 	if strings.HasSuffix(filename, "_test.go") {
@@ -90,20 +68,26 @@ func (r *runner) handleFile(filename string) {
 		}
 
 		refs := r.getReferences(filename, s.Range.Start)
+		var unused bool
+		var testOnly bool
 		if len(refs) == 0 {
-			r.unused = append(r.unused, fmt.Sprintf("%s:%s:%s:%s", filename, s.Range.Start, s.Type, s.Name))
+			unused = true
 		} else {
-			var nonTestUsage bool
+			testOnly = true
 			for _, ref := range refs {
 				if !ref.IsTest {
-					nonTestUsage = true
+					testOnly = false
 					break
 				}
 			}
+		}
 
-			if !nonTestUsage {
-				r.usedInTestsOnly = append(r.usedInTestsOnly, fmt.Sprintf("%s:%s:%s:%s", filename, s.Range.Start, s.Type, s.Name))
+		if unused || testOnly {
+			e := Usage{
+				Message: fmt.Sprintf("%s:%s %s %s", filename, s.Range.Start, s.Name, s.Type),
+				IsTest:  testOnly,
 			}
+			fmt.Println(e.String())
 		}
 	}
 }
@@ -175,11 +159,6 @@ func must(err error, msg string) {
 	}
 }
 
-type Usage struct {
-	Filename string
-	Symbol   Symbol
-}
-
 type Symbol struct {
 	Name  string
 	Type  string
@@ -194,6 +173,22 @@ type Range struct {
 type Reference struct {
 	Ref    string
 	IsTest bool
+}
+
+type Usage struct {
+	Message string
+	IsTest  bool
+}
+
+func (u Usage) String() string {
+	color := colorUnused
+	prefix := "Unused: "
+	if u.IsTest {
+		color = colorTestOnly
+		prefix = "Test only: "
+	}
+
+	return (color + prefix + u.Message + colorReset)
 }
 
 func isExported(s string) bool {
