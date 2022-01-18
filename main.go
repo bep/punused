@@ -111,9 +111,10 @@ func (r *runner) handleFile(filename string) {
 	symbols, err := r.client.DocumentSymbol(ctx, filename)
 	exitOnErr("Failed to get symbols", err)
 
-	for _, s := range symbols {
+	var handleSymbol func(s *lib.Symbol)
+	handleSymbol = func(s *lib.Symbol) {
 		if !isExported(s.Name) {
-			continue
+			return
 		}
 
 		refs, err := r.client.DocumentReferences(ctx, s.Location)
@@ -141,6 +142,14 @@ func (r *runner) handleFile(filename string) {
 			}
 			fmt.Println(e.String())
 		}
+
+		for _, child := range s.Children {
+			handleSymbol(child)
+		}
+	}
+
+	for _, s := range symbols {
+		handleSymbol(s)
 	}
 }
 

@@ -119,7 +119,7 @@ func (s *GoplsClient) DocumentSymbol(ctx context.Context, filename string) ([]*S
 
 	var symbols []*Symbol
 	for _, m := range result {
-		s, err := mapToSymbol(uri, m)
+		s, err := s.mapToSymbol(uri, m)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +300,7 @@ type response struct {
 	Result     json.RawMessage `json:"result"`
 }
 
-func mapToSymbol(uri lsp.DocumentURI, m map[string]interface{}) (*Symbol, error) {
+func (c *GoplsClient) mapToSymbol(uri lsp.DocumentURI, m map[string]interface{}) (*Symbol, error) {
 	b, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
@@ -311,14 +311,26 @@ func mapToSymbol(uri lsp.DocumentURI, m map[string]interface{}) (*Symbol, error)
 		return nil, err
 	}
 
-	return &Symbol{
+	s := c.documentSymbolToSymbol(uri, ds)
+
+	return s, nil
+}
+
+func (c *GoplsClient) documentSymbolToSymbol(uri lsp.DocumentURI, ds DocumentSymbol) *Symbol {
+	s := &Symbol{
 		Name: ds.Name,
 		Kind: ds.Kind,
 		Location: lsp.Location{
 			URI:   uri,
 			Range: ds.SelectionRange,
 		},
-	}, nil
+	}
+
+	for _, d := range ds.Children {
+		s.Children = append(s.Children, c.documentSymbolToSymbol(uri, d))
+	}
+
+	return s
 }
 
 func newConn(cmd *exec.Cmd) (_ Conn, err error) {
@@ -369,6 +381,7 @@ type Symbol struct {
 	Name     string
 	Kind     lsp.SymbolKind
 	Location lsp.Location
+	Children []*Symbol
 }
 
 // Types missing in github.com/sourcegraph/go-lsp borrowed from https://github.com/golang/tools/tree/master/gopls
