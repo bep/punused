@@ -1,3 +1,5 @@
+[![Go](https://github.com/bep/unused/actions/workflows/go.yml/badge.svg)](https://github.com/bep/unused/actions/workflows/go.yml)
+
 This is a small utility that finds _unused exported Go symbols_ (functions, methods ...) in Go. For all other similar use cases, use https://github.com/dominikh/go-tools
 
 I have used this in Hugo (a monorepo with many packages), and it works, but there are some caveats:
@@ -22,7 +24,7 @@ go install golang.org/x/tools/gopls@latest
 
 ## Use
 
-`unused` takes only one argument: A [Glog](https://github.com/gobwas/glob) filenam pattern (Unix style slashes, double asterisk is supported) of Go files to check.
+`unused` takes only one argument: A [Glob](https://github.com/gobwas/glob) filenam pattern (Unix style slashes, double asterisk is supported) of Go files to check.
 
 Running `unused` in this repository currently gives:
 
