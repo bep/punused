@@ -10,8 +10,10 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("usage: unused <glob pattern>")
+	// Default to "every go file in the workspace".
+	pattern := "**/*.go"
+	if len(os.Args) > 1 {
+		pattern = os.Args[1]
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -23,7 +25,7 @@ func main() {
 		ctx,
 		lib.RunConfig{
 			WorkspaceDir:    wd,
-			FilenamePattern: os.Args[1],
+			FilenamePattern: pattern,
 			Out:             os.Stdout,
 		},
 	)

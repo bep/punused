@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,6 +17,13 @@ func Run(ctx context.Context, cfg RunConfig) (err error) {
 	if err := cfg.validate(); err != nil {
 		return err
 	}
+
+	// Sanity check: Check that the workspace dir exists and that
+	// it's a Go module.
+	if _, err := os.Stat(filepath.Join(cfg.WorkspaceDir, "go.mod")); err != nil {
+		return fmt.Errorf("workspace %s is not a Go module (go.mod is missing): %w", cfg.WorkspaceDir, err)
+	}
+
 	r, err := newRunner(ctx, cfg)
 	if err != nil {
 		return err
@@ -35,7 +43,7 @@ func newRunner(ctx context.Context, cfg RunConfig) (*runner, error) {
 		return nil, fmt.Errorf("invalid glob pattern: %w", err)
 	}
 
-	client, err := NewClient(cfg.WorkspaceDir)
+	client, err := newClient(ctx, cfg.WorkspaceDir)
 	if err != nil {
 		return nil, err
 	}
