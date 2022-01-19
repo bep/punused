@@ -18,13 +18,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Used in tests.
-var (
-	UnusedVar         = "unused"
-	UsedVar           = "used"
-	OnlyUsedInTestVar = "only used in test"
-)
-
 type GoplsClient struct {
 	workspaceDir string
 
@@ -111,19 +104,15 @@ func (s *GoplsClient) DocumentSymbol(ctx context.Context, filename string) ([]*S
 		},
 	}
 
-	var result []map[string]interface{}
+	var result []DocumentSymbol
 
 	if err := s.Call(ctx, "textDocument/documentSymbol", params, &result); err != nil {
 		return nil, err
 	}
 
 	var symbols []*Symbol
-	for _, m := range result {
-		s, err := s.mapToSymbol(uri, m)
-		if err != nil {
-			return nil, err
-		}
-		symbols = append(symbols, s)
+	for _, r := range result {
+		symbols = append(symbols, s.documentSymbolToSymbol(uri, r))
 	}
 
 	return symbols, nil
@@ -298,22 +287,6 @@ type response struct {
 	RPCVersion string          `json:"jsonrpc"`
 	ID         uint64          `json:"id"`
 	Result     json.RawMessage `json:"result"`
-}
-
-func (c *GoplsClient) mapToSymbol(uri lsp.DocumentURI, m map[string]interface{}) (*Symbol, error) {
-	b, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-
-	var ds DocumentSymbol
-	if err = json.Unmarshal(b, &ds); err != nil {
-		return nil, err
-	}
-
-	s := c.documentSymbolToSymbol(uri, ds)
-
-	return s, nil
 }
 
 func (c *GoplsClient) documentSymbolToSymbol(uri lsp.DocumentURI, ds DocumentSymbol) *Symbol {
