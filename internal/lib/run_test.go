@@ -45,6 +45,7 @@ internal/lib/testpackages/firstpackage/code1.go:37:2 method UsedInterfaceMethodR
 internal/lib/testpackages/firstpackage/code1.go:41:6 interface UnusedInterface is unused (EU1002)
 internal/lib/testpackages/firstpackage/code1.go:42:2 method UnusedInterfaceReturningInt is unused (EU1002)
 internal/lib/testpackages/firstpackage/code1.go:45:6 interface UsedInterface is unused (EU1002)
+internal/lib/testpackages/firstpackage/testlib1.go:4:2 constant OnlyUsedInTestConst is used in test only (EU1001)
 `
 
 	if diff := cmp.Diff(strings.TrimSpace(buff.String()), strings.TrimSpace(golden)); diff != "" {
