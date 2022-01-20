@@ -16,7 +16,7 @@ func main() {
 		pattern = os.Args[1]
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	wd, _ := os.Getwd()

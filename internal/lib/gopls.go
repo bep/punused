@@ -91,11 +91,15 @@ func (c Conn) Close() error {
 	writeErr := c.WriteCloser.Close()
 	readErr := c.ReadCloser.Close()
 
-	if writeErr != nil {
+	if writeErr != nil && writeErr != os.ErrClosed {
 		return writeErr
 	}
 
-	return readErr
+	if readErr != nil && readErr != os.ErrClosed {
+		return readErr
+	}
+
+	return nil
 }
 
 // Start starts conn's Cmd.
