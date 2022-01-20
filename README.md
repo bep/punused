@@ -1,4 +1,4 @@
-[![Go](https://github.com/bep/unused/actions/workflows/go.yml/badge.svg)](https://github.com/bep/unused/actions/workflows/go.yml)
+[![Go](https://github.com/bep/punused/actions/workflows/go.yml/badge.svg)](https://github.com/bep/punused/actions/workflows/go.yml)
 
 This is a small utility that finds _unused exported Go symbols_ (functions, methods ...) in Go. For all other similar use cases, use https://github.com/dominikh/go-tools
 
@@ -13,7 +13,7 @@ So, you should inspect and test the proposed deletes. See this [test repo](https
 ## Install
 
 ```bash
-go install github.com/bep/unused@latest
+go install github.com/bep/punused@latest
 ```
 
 You also need `gopls`:
@@ -24,12 +24,14 @@ go install golang.org/x/tools/gopls@latest
 
 ## Use
 
-`unused` takes only one argument: A [Glob](https://github.com/gobwas/glob) filenam pattern (Unix style slashes, double asterisk is supported) of Go files to check.
+`punused` takes only one (optional) argument: A [Glob](https://github.com/gobwas/glob) filenam pattern (Unix style slashes, double asterisk is supported) of Go files to check.
 
-Running `unused` in this repository currently gives:
+`punused` needs to be run from the root of a Go Module. To test a specific package you can target it with a Glob, e.g. `punused **/utils/*.go`.
+
+Running `punused` in this repository currently gives:
 
 ```
-unused "**.go"                                                                       
+punused                                                                
 internal/lib/gopls.go:379:2 field Detail is unused (EU1002)
 internal/lib/gopls.go:389:2 field Tags is unused (EU1002)
 internal/lib/gopls.go:395:2 field Deprecated is unused (EU1002)

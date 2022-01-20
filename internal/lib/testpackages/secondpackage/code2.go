@@ -3,7 +3,7 @@ package secondpackage
 import (
 	"fmt"
 
-	"github.com/bep/unused/internal/lib/testpackages/firstpackage"
+	"github.com/bep/punused/internal/lib/testpackages/firstpackage"
 )
 
 func UseStuffInFirstPackage() {

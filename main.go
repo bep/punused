@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/bep/unused/internal/lib"
+	"github.com/bep/punused/internal/lib"
 )
 
 func main() {

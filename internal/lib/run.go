@@ -18,8 +18,7 @@ func Run(ctx context.Context, cfg RunConfig) (err error) {
 		return err
 	}
 
-	// Sanity check: Check that the workspace dir exists and that
-	// it's a Go module.
+	// This needs to be run from the rooot of a Go Module to get correct results.
 	if _, err := os.Stat(filepath.Join(cfg.WorkspaceDir, "go.mod")); err != nil {
 		return fmt.Errorf("workspace %s is not a Go module (go.mod is missing): %w", cfg.WorkspaceDir, err)
 	}
@@ -62,10 +61,10 @@ func (cfg RunConfig) validate() error {
 		return fmt.Errorf("WorkspaceDir is required")
 	}
 	if cfg.FilenamePattern == "" {
-		return fmt.Errorf("filenamePattern is required")
+		return fmt.Errorf("FilenamePattern is required")
 	}
 	if cfg.Out == nil {
-		return fmt.Errorf("out is required")
+		return fmt.Errorf("Out is required")
 	}
 	return nil
 }
@@ -114,7 +113,7 @@ func (r *runner) handleFile(filename string) error {
 
 	symbols, err := r.client.DocumentSymbol(r.ctx, filename)
 	if err != nil {
-		fmt.Errorf("Failed to get symbols: %w", err)
+		fmt.Errorf("failed to get symbols: %w", err)
 	}
 
 	var handleSymbol func(s *Symbol) error

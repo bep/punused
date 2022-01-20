@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	qt "github.com/frankban/quicktest"
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/net/context"
 )
 
@@ -46,7 +47,7 @@ internal/lib/testpackages/firstpackage/code1.go:42:2 method UnusedInterfaceRetur
 internal/lib/testpackages/firstpackage/code1.go:45:6 interface UsedInterface is unused (EU1002)
 `
 
-	if strings.TrimSpace(buff.String()) != strings.TrimSpace(golden) {
-		c.Fatal("unexpected output\n", buff.String())
+	if diff := cmp.Diff(strings.TrimSpace(buff.String()), strings.TrimSpace(golden)); diff != "" {
+		c.Fatal("unexpected output\n", diff+"\n\n"+buff.String())
 	}
 }

@@ -1,4 +1,4 @@
-module github.com/bep/unused
+module github.com/bep/punused
 
 go 1.17
 
