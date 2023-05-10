@@ -24,9 +24,9 @@ go install golang.org/x/tools/gopls@latest
 
 ## Use
 
-`punused` takes only one (optional) argument: A [Glob](https://github.com/gobwas/glob) filenam pattern (Unix style slashes, double asterisk is supported) of Go files to check.
+`punused` takes only one (optional) argument: A [Glob](https://github.com/gobwas/glob) filename pattern (Unix style slashes, double asterisk is supported) of Go files to check.
 
-`punused` needs to be run from the root of a Go Module. To test a specific package you can target it with a Glob, e.g. `punused **/utils/*.go`.
+`punused` needs to be run from the root of a Go Module. To test a specific package you can target it with a Glob, e.g. `punused "utils/*.go"`.
 
 Running `punused` in this repository currently gives:
 
