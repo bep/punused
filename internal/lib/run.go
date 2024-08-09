@@ -113,7 +113,7 @@ func (r *runner) handleFile(filename string) error {
 
 	symbols, err := r.client.DocumentSymbol(r.ctx, filename)
 	if err != nil {
-		fmt.Errorf("failed to get symbols: %w", err)
+		return fmt.Errorf("failed to get symbols: %w", err)
 	}
 
 	var handleSymbol func(s *Symbol) error
