@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,4 +52,42 @@ internal/lib/testpackages/firstpackage/testlib1.go:4:2 constant OnlyUsedInTestCo
 	if diff := cmp.Diff(strings.TrimSpace(buff.String()), strings.TrimSpace(golden)); diff != "" {
 		c.Fatal("unexpected output\n", diff+"\n\n"+buff.String())
 	}
+}
+
+func TestWalkReturnsWalkError(t *testing.T) {
+	c := qt.New(t)
+
+	r := &runner{
+		cfg: RunConfig{
+			WorkspaceDir:    filepath.Join(t.TempDir(), "does-not-exist"),
+			FilenamePattern: "**/*.go",
+			Out:             &bytes.Buffer{},
+		},
+	}
+
+	c.Assert(r.Walk(), qt.ErrorIs, fs.ErrNotExist)
+}
+
+// cancelOnFinding cancels on the first finding printed, where no request is in
+// flight, so a later one fails mid-walk.
+type cancelOnFinding struct{ cancel func() }
+
+func (w *cancelOnFinding) Write(p []byte) (int, error) { w.cancel(); return len(p), nil }
+
+func TestRunKeepsWalkErrorOverStop(t *testing.T) {
+	c := qt.New(t)
+
+	wd, _ := os.Getwd()
+	wd = filepath.Join(wd, "..", "..")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := Run(ctx, RunConfig{
+		WorkspaceDir:    wd,
+		FilenamePattern: "**/testpackages/**.go",
+		Out:             &cancelOnFinding{cancel: cancel},
+	})
+
+	c.Assert(err, qt.ErrorIs, context.Canceled)
 }

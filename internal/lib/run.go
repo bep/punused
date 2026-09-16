@@ -28,7 +28,10 @@ func Run(ctx context.Context, cfg RunConfig) (err error) {
 		return err
 	}
 	defer func() {
-		err = r.Stop()
+		stopErr := r.Stop()
+		if err == nil {
+			err = stopErr
+		}
 	}()
 
 	err = r.Walk()
@@ -82,6 +85,11 @@ func (r *runner) Stop() error {
 
 func (r *runner) Walk() error {
 	return filepath.Walk(r.cfg.WorkspaceDir, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			// Walk reports a Readdirnames failure with a non-nil info and an
+			// Lstat failure with a nil one, so neither arm below sees both.
+			return err
+		}
 		if info == nil {
 			return nil
 		}
