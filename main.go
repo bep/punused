@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Default to "every go file in the workspace".
-	pattern := "**/*.go"
+	pattern := "**.go"
 	if len(os.Args) > 1 {
 		pattern = os.Args[1]
 	}
